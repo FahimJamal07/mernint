@@ -1,92 +1,108 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../utils/AuthContext';
 
 const AuthPage = () => {
-  const [isLoginView, setIsLoginView] = useState(true); 
-  const navigate = useNavigate();
-  const {login}=useAuth();
-
+  // 1. Define the missing state variables
+  const [isLoginView, setIsLoginView] = useState(true); // Toggle between Login/Register
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  
+  // 2. Import hooks
+  const { loginUser, registerUser } = useAuth();
+  const navigate = useNavigate();
 
-  const handleAuthSubmit = (e) => {
+  // 3. Handle Form Submission
+  const handleAuthSubmit = async (e) => {
     e.preventDefault();
+    console.log("1. Submitting form..."); // LOG 1
+    
+    const userData = { email, password };
+    if (!isLoginView) userData.name = name;
 
+    let response;
     if (isLoginView) {
-        
-        if (!email || !password) {
-            alert("Please enter both email and password.");
-            return;
-        }
-
-       console.log(`Mock Login Success for: ${email}`);
-        
-        login({ email }); 
-        
-        navigate('/dashboard'); 
-
+      response = await loginUser(userData);
     } else {
-        
-        if (!name || !email || !password || !confirmPassword) {
-            alert("Please fill all fields to register.");
-            return;
-        }
-        
-        if (password !== confirmPassword) {
-            alert("Passwords do not match. Fix your logic.");
-            return;
-        }
-        
-        console.log(`Mock Registration Success for: ${email}`);
-        login({ email });
-        
-        navigate('/dashboard');
+      response = await registerUser(userData);
     }
-};
+
+    console.log("2. Response received:", response); // LOG 2
+
+    if (response.success) {
+      console.log("3. Login Success! Checking Local Storage..."); // LOG 3
+      
+      const user = JSON.parse(localStorage.getItem('userInfo'));
+      console.log("4. User found in storage:", user); // LOG 4
+
+      if (user.role === 'admin') {
+        console.log("5. Redirecting to Admin..."); // LOG 5
+        navigate('/admin/course-create');
+      } else {
+        console.log("5. Redirecting to Dashboard..."); // LOG 5
+        navigate('/dashboard');
+      }
+    } else {
+      console.log("❌ Login Failed:", response.error);
+      alert(response.error || 'Something went wrong');
+    }
+  };
+
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-      <div className="card shadow p-4" style={{ width: '450px' }}>
+    <div className="container d-flex justify-content-center align-items-center vh-100">
+      <div className="card shadow p-4" style={{ width: '400px' }}>
         <h3 className="text-center mb-4">
-            {isLoginView ? 'Student Login' : 'New User Registration'}
+          {isLoginView ? 'Student Login' : 'New User Registration'}
         </h3>
-        
+
         <form onSubmit={handleAuthSubmit}>
+          {/* Name Field - Only show if Registering */}
           {!isLoginView && (
             <div className="mb-3">
               <label className="form-label">Full Name</label>
-              <input type="text" className="form-control" value={name} onChange={(e) => setName(e.target.value)} required />
+              <input 
+                type="text" 
+                className="form-control" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required={!isLoginView}
+              />
             </div>
           )}
 
           <div className="mb-3">
-            <label className="form-label">Email</label>
-            <input type="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@college.edu" required />
+            <label className="form-label">Email Address</label>
+            <input 
+              type="email" 
+              className="form-control" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required 
+            />
           </div>
+
           <div className="mb-3">
             <label className="form-label">Password</label>
-            <input type="password" className="form-control" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input 
+              type="password" 
+              className="form-control" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required 
+            />
           </div>
 
-          {!isLoginView && (
-            <div className="mb-3">
-              <label className="form-label">Confirm Password</label>
-              <input type="password" className="form-control" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-            </div>
-          )}
-          
-          <button type="submit" className="btn btn-primary w-100 mt-2">
-            {isLoginView ? 'Login' : 'Register Account'}
+          <button type="submit" className="btn btn-primary w-100">
+            {isLoginView ? 'Login' : 'Register'}
           </button>
         </form>
 
-        <p className="text-center mt-3 mb-0">
-          <a href="#" onClick={() => setIsLoginView(!isLoginView)}>
-            {isLoginView ? 'Need an account? Register Here.' : 'Already have an account? Login.'}
-          </a>
-        </p>
+        <div className="text-center mt-3">
+          <p style={{ cursor: 'pointer', color: 'blue' }} onClick={() => setIsLoginView(!isLoginView)}>
+            {isLoginView ? "Don't have an account? Register" : "Already have an account? Login"}
+          </p>
+        </div>
       </div>
     </div>
   );

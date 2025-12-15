@@ -1,96 +1,102 @@
-import { useState, useEffect } from 'react';
-import Layout from '../components/Layout';
-import CourseList from './CourseList';
-
-const MOCK_DB_COURSES = [
-  { id: 1, title: "Full Stack Development", students: 45, capacity: 60 },
-  { id: 2, title: "Data Structures", students: 60, capacity: 60 }, 
-  { id: 3, title: "Cloud Computing", students: 12, capacity: 40 },
-];
+import { useEffect, useState } from 'react';
+import { useAuth } from '../utils/AuthContext';
 
 const Dashboard = () => {
+    const { user, logoutUser } = useAuth();
+    const [courses, setCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-  const [courses, setCourses] = useState([]); 
-  const [enrolledCourses, setEnrolledCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
+    // Fetch courses when the page loads
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/courses');
+                const data = await response.json();
+                setCourses(data);
+            } catch (error) {
+                console.error("Error fetching courses:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-  useEffect(() => {
-      setTimeout(() => {
-      setCourses(MOCK_DB_COURSES);
-      setLoading(false);
-    },1000)
-    
-    console.log("Component Mounted. Fetching data...");
-  }, []);
+        fetchCourses();
+    }, []);
 
-  const handleEnroll = (courseId) => {
-    console.log(`Attempting to enroll in course ID: ${courseId}`);
-    const course = courses.find(c => c.id === courseId);
-    if(enrolledCourses.includes(courseId)){
-      alert("You have already enrolled for this course!!");
-      return;
-    }
-    if(course.students<course.capacity){
-      const updatedCourses = courses.map(c => c.id === courseId ? {...c, students: c.students + 1} : c);
-      setCourses(updatedCourses);
-      setEnrolledCourses([...enrolledCourses, courseId]);
-      alert("Success! You are enrolled.");
-    }
-    else{
-      alert("Class is full! Added to Waitlist (Mock).");
-    }
+    const handleDelete = async (id) => {
+        if (window.confirm('Are you sure you want to delete this course?')) {
+            try {
+                const response = await fetch(`http://localhost:5000/api/courses/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${user.token}` // Admin Token needed!
+                    }
+                });
 
-  };
+                if (response.ok) {
+                    // Remove from UI immediately without refreshing
+                    setCourses(courses.filter(course => course._id !== id));
+                    alert('Course Deleted');
+                } else {
+                    alert('Failed to delete');
+                }
+            } catch (error) {
+                console.error("Error deleting:", error);
+            }
+        }
+    };
 
-  if (loading) {
     return (
-      <Layout>
-        <div className="d-flex justify-content-center align-items-center" style={{height: '50vh'}}>
-            <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
+        <div className="container mt-5">
+            {/* Header */}
+            <div className="d-flex justify-content-between align-items-center mb-5">
+                <h1>Course Dashboard</h1>
+                <div className="d-flex align-items-center gap-3">
+                    <span>Hello, {user.name}</span>
+                    <button onClick={logoutUser} className="btn btn-outline-danger btn-sm">Logout</button>
+                </div>
             </div>
-        </div>
-      </Layout>
-    );
-  }
 
-  return (
-    <Layout>
-      <h2 className="mb-4">Student Dashboard</h2>
-      
-      <div className="row">
-        {/* LEFT COLUMN: Course Catalog */}
-          <div className="col-md-8">
-            <CourseList 
-                courses={courses} 
-                enrolledCourses={enrolledCourses} 
-                onEnroll={handleEnroll} 
-            />
-          </div>
-        
-        {/* RIGHT COLUMN: My Schedule */}
-        <div className="col-md-4">
-            <div className="card shadow-sm">
-                <div className="card-header bg-success text-white">
-                    <h5 className="mb-0">My Schedule</h5>
+            {/* Course Grid */}
+            {loading ? (
+                <p>Loading courses...</p>
+            ) : courses.length === 0 ? (
+                <div className="alert alert-info">No courses available yet.</div>
+            ) : (
+                <div className="row">
+                    {courses.map((course) => (
+                        <div key={course._id} className="col-md-4 mb-4">
+                            <div className="card h-100 shadow-sm">
+                                {/* If you added images, use course.image here */}
+                                <div className="card-body">
+                                    <h5 className="card-title">{course.title}</h5>
+                                    <h6 className="card-subtitle mb-2 text-muted">${course.price}</h6>
+                                    <p className="card-text">{course.description}</p>
+                                </div>
+                                <div className="card-footer bg-white border-top-0 d-flex gap-2">
+                                  <button className="btn btn-primary flex-grow-1">Enroll Now</button>
+
+                                  {user && user.role === 'admin' && (
+                                    <div className="d-flex gap-2 w-100">
+                                      <button 
+                                          onClick={() => handleDelete(course._id)} 
+                                          className="btn btn-danger"
+                                      >
+                                          Delete
+                                      </button>
+                                      <a href={`/admin/course-edit/${course._id}`} className="btn btn-warning btn-sm">
+                                          Edit
+                                      </a>
+                                    </div>
+                                  )}
+                              </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
-                <div className="card-body">
-                    {enrolledCourses.length === 0 ? (
-                        <p className="text-muted text-center my-3">No courses enrolled yet.</p>
-                    ) : (
-                        <ul className="list-group">
-                            {enrolledCourses.map(id => {
-                                const course = courses.find(c => c.id === id);
-                                return <li key={id} className="list-group-item">{course?.title}</li>
-                            })}
-                        </ul>
-                    )}
-                </div>
-            </div>
+            )}
         </div>
-      </div>
-    </Layout>
-  );
+    );
 };
 
 export default Dashboard;

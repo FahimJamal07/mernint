@@ -1,102 +1,112 @@
-import { useState } from 'react';
-import Layout from '../components/Layout'; 
+import { useState, useEffect } from 'react';
+import { useAuth } from '../utils/AuthContext';
+import { useNavigate, useParams } from 'react-router-dom';
 
 const CourseForm = () => {
+    const { user, logoutUser } = useAuth();
+    const navigate = useNavigate();
+    const { id } = useParams(); // Get ID from URL if editing
+
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [capacity, setCapacity] = useState(''); 
-    const [facultyId, setFacultyId] = useState('');
-    const [error, setError] = useState(null);
+    const [price, setPrice] = useState('');
+    const [message, setMessage] = useState('');
 
-    const handleSubmit = (e) => {
-        e.preventDefault(); 
-        setError(null);
+    const isEditMode = !!id; // If ID exists, we are editing
 
-
-        if (!title || capacity <= 0 || !facultyId) {
-            setError("Please fill in the Course Title, Capacity (must be > 0), and assign a Faculty ID.");
-            return; 
+    // Load data if Editing
+    useEffect(() => {
+        if (isEditMode) {
+            const fetchCourse = async () => {
+                const response = await fetch(`http://localhost:5000/api/courses`);
+                const data = await response.json();
+                // Find the specific course from the list (or fetch by ID directly)
+                const course = data.find(c => c._id === id);
+                if (course) {
+                    setTitle(course.title);
+                    setDescription(course.description);
+                    setPrice(course.price);
+                }
+            };
+            fetchCourse();
         }
+    }, [id, isEditMode]);
 
-        if (isNaN(capacity) || !Number.isInteger(Number(capacity))) {
-            setError("Capacity must be a whole number.");
-            return; 
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setMessage('');
+
+        // 1. Decide URL and Method
+        const url = isEditMode 
+            ? `http://localhost:5000/api/courses/${id}` 
+            : 'http://localhost:5000/api/courses';
+            
+        const method = isEditMode ? 'PUT' : 'POST';
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${user.token}`
+                },
+                body: JSON.stringify({ title, description, price: Number(price) })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(isEditMode ? 'Course Updated!' : 'Course Created!');
+                navigate('/dashboard'); // Go back to dashboard
+            } else {
+                setMessage(`❌ Error: ${data.message}`);
+            }
+        } catch (error) {
+            setMessage('❌ Server Error');
         }
-        
-        const newCourseData = {
-            title, description, capacity: Number(capacity), facultyId, students: 0, id: Date.now()
-        };
-
-        console.log("Mock Course Created Successfully:", newCourseData);
-        alert(`SUCCESS: Course "${title}" created. (Check console for data)`);
-        
-        // Clear the form
-        setTitle(''); setDescription(''); setCapacity(''); setFacultyId('');
     };
 
     return (
-        <Layout>
-            <h2 className="mb-4">Create New Course</h2>
-            <div className="card shadow-sm p-4" style={{ maxWidth: '600px' }}>
+        <div className="container mt-5">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h1>{isEditMode ? 'Edit Course' : 'Create Course'}</h1>
+                <button onClick={() => navigate('/dashboard')} className="btn btn-secondary">Back to Dashboard</button>
+            </div>
 
-                {error && (
-                    <div className="alert alert-danger" role="alert">
-                        {error}
-                    </div>
-                )}
+            <div className="card p-4 shadow-sm" style={{ maxWidth: '600px', margin: '0 auto' }}>
+                {message && <div className="alert alert-danger">{message}</div>}
 
                 <form onSubmit={handleSubmit}>
-                    
-
                     <div className="mb-3">
                         <label className="form-label">Course Title</label>
                         <input 
-                            type="text" 
-                            className="form-control" 
-                            placeholder="e.g., Advanced React Hooks"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
+                            type="text" className="form-control" 
+                            value={title} onChange={(e) => setTitle(e.target.value)} required 
                         />
                     </div>
 
-                    {/* Description */}
                     <div className="mb-3">
-                        <label className="form-label">Description (Optional)</label>
+                        <label className="form-label">Description</label>
                         <textarea 
-                            className="form-control" 
-                            rows="3"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                        />
+                            className="form-control" rows="3"
+                            value={description} onChange={(e) => setDescription(e.target.value)} required 
+                        ></textarea>
                     </div>
 
                     <div className="mb-3">
-                        <label className="form-label">Maximum Capacity</label>
+                        <label className="form-label">Price ($)</label>
                         <input 
-                            type="number" 
-                            className="form-control" 
-                            value={capacity}
-                            onChange={(e) => setCapacity(e.target.value)}
+                            type="number" className="form-control" 
+                            value={price} onChange={(e) => setPrice(e.target.value)} required 
                         />
                     </div>
 
-                    <div className="mb-3">
-                        <label className="form-label">Assigned Faculty ID</label>
-                        <input 
-                            type="text" 
-                            className="form-control" 
-                            placeholder="e.g., FAC001"
-                            value={facultyId}
-                            onChange={(e) => setFacultyId(e.target.value)}
-                        />
-                    </div>
-
-                    <button type="submit" className="btn btn-success w-100 mt-3">
-                        Create Course
+                    <button type="submit" className="btn btn-success w-100">
+                        {isEditMode ? 'Update Course' : 'Create Course'}
                     </button>
                 </form>
             </div>
-        </Layout>
+        </div>
     );
 };
 

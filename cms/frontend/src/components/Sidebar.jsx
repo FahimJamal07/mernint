@@ -10,7 +10,6 @@ const Sidebar = () => {
             Dashboard
           </Link>
         </li>
-        {/* We can add more links here later easily */}
         <li className="nav-item mb-2">
            <span className="nav-link text-white-50 disabled">Profile (Coming Soon)</span>
         </li>

@@ -24,6 +24,12 @@ function App() {
               <CourseForm />
             </PrivateRoute>
           } />
+
+          <Route path="/admin/course-edit/:id" element={
+            <PrivateRoute requiredRole="admin">
+              <CourseForm />
+            </PrivateRoute>
+          } />
           
         </Routes>
       </BrowserRouter>

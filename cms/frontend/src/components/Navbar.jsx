@@ -1,5 +1,4 @@
 const Navbar = () => {
-  // In the future, we will get the real user name here
   return (
     <nav className="navbar navbar-light bg-white shadow-sm px-4">
       <span className="navbar-brand mb-0 h1">Student Portal</span>
