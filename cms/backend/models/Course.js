@@ -1,29 +1,22 @@
 const mongoose = require('mongoose');
 
 const courseSchema = mongoose.Schema({
-  title: {
-    type: String,
-    required: [true, 'Please add a course title']
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  price: { type: Number, required: true },
+  image: { type: String, default: 'https://via.placeholder.com/150' },
+  instructor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  
+  // NEW FIELDS
+  seats: { 
+    type: Number, 
+    default: 10, // Default 10 seats per course
+    required: true 
   },
-  description: {
-    type: String,
-    required: [true, 'Please add a description']
-  },
-  price: {
-    type: Number,
-    required: [true, 'Please add a price']
-  },
-  image: {
-    type: String,
-    default: 'https://via.placeholder.com/150'
-  },
-  instructor: {
+  studentsEnrolled: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  }
-}, {
-  timestamps: true
-});
+    ref: 'User'
+  }]
+}, { timestamps: true });
 
 module.exports = mongoose.model('Course', courseSchema);

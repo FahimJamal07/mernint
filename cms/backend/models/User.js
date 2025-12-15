@@ -1,26 +1,16 @@
 const mongoose = require('mongoose');
 
 const userSchema = mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'Please add a name']
-  },
-  email: {
-    type: String,
-    required: [true, 'Please add an email'],
-    unique: true
-  },
-  password: {
-    type: String,
-    required: [true, 'Please add a password']
-  },
-  role: {
-    type: String,
-    enum: ['student', 'admin'], // MUST match your frontend strings
-    default: 'student'
-  }
-}, {
-  timestamps: true
-});
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: ['student', 'admin'], default: 'student' },
+  
+  // NEW FIELD
+  enrolledCourses: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Course'
+  }]
+}, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

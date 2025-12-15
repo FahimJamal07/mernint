@@ -89,7 +89,34 @@ const generateToken = (id) => {
   });
 };
 
+
+// @desc    Get details for current logged in user
+// @route   GET /api/auth/me
+// @access  Private
+const getMyProfile = async (req, res) => {
+  try {
+    // We use .populate() to replace the course IDs with actual Course data
+    const user = await User.findById(req.user.id).populate('enrolledCourses');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      _id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      enrolledCourses: user.enrolledCourses 
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
+  getMyProfile,
 };
+

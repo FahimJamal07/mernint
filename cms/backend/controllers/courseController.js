@@ -1,4 +1,5 @@
 const Course = require('../models/Course');
+const User = require('../models/User');
 
 // @desc    Create a new course
 // @route   POST /api/courses
@@ -41,19 +42,17 @@ module.exports = { createCourse, getCourses };
 // @access  Private/Admin
 const deleteCourse = async (req, res) => {
   try {
-    const course = await Course.findById(req.params.id);
+    // "findByIdAndDelete" is safer than "course.remove()" for old data
+    const course = await Course.findByIdAndDelete(req.params.id);
 
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    // Check if user is the one who created it (Optional strict check)
-    // if (course.instructor.toString() !== req.user.id) { ... }
-
-    await course.deleteOne(); // or course.remove() in older Mongoose versions
-    res.json({ message: 'Course removed' });
+    res.json({ message: 'Course removed successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
+    console.error("Delete Error:", error);
+    res.status(500).json({ message: 'Server Error during delete' });
   }
 };
 
@@ -86,3 +85,69 @@ const updateCourse = async (req, res) => {
 };
 
 module.exports = { createCourse, getCourses, deleteCourse, updateCourse };
+
+// @desc    Enroll user in a course
+// @route   POST /api/courses/:id/enroll
+// @access  Private (Student)
+const enrollCourse = async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.id);
+    const user = await User.findById(req.user.id);
+
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    // === AUTO-FIX FOR OLD DATA ===
+    // If these fields are missing, initialize them to defaults
+    if (!course.studentsEnrolled) {
+        course.studentsEnrolled = [];
+    }
+    if (!course.seats) {
+        course.seats = 10;
+    }
+    // =============================
+
+    // 1. Check if already enrolled
+    // We use .toString() to ensure we compare IDs correctly
+    if (course.studentsEnrolled.some(id => id.toString() === req.user.id)) {
+      return res.status(400).json({ message: 'You are already enrolled' });
+    }
+
+    // 2. Check seats
+    if (course.studentsEnrolled.length >= course.seats) {
+      return res.status(400).json({ message: 'Course is full' });
+    }
+
+    // 3. Perform Enrollment
+    course.studentsEnrolled.push(req.user.id);
+    
+    // Ensure user enrolledCourses array exists
+    if (!user.enrolledCourses) user.enrolledCourses = [];
+    user.enrolledCourses.push(course._id);
+
+    await course.save();
+    await user.save();
+
+    res.json({ message: 'Enrollment Successful!' });
+  } catch (error) {
+    console.error("Enroll Error:", error); // This puts the real error in your terminal
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+// @desc    Get details for current logged in user (Populate enrolled courses)
+// @route   GET /api/auth/me
+// @access  Private
+const getMyProfile = async (req, res) => {
+    try {
+        // Fetch user and replace the IDs in 'enrolledCourses' with real course data
+        const user = await User.findById(req.user.id).populate('enrolledCourses');
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+}
+
+// REMEMBER TO EXPORT THEM
+module.exports = { createCourse, getCourses, deleteCourse, updateCourse, enrollCourse, getMyProfile };

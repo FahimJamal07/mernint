@@ -16,7 +16,7 @@ const AuthPage = () => {
   // 3. Handle Form Submission
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
-    console.log("1. Submitting form..."); // LOG 1
+    console.log("1. Submitting form..."); 
     
     const userData = { email, password };
     if (!isLoginView) userData.name = name;
@@ -28,19 +28,19 @@ const AuthPage = () => {
       response = await registerUser(userData);
     }
 
-    console.log("2. Response received:", response); // LOG 2
+    console.log("2. Response received:", response); 
 
     if (response.success) {
-      console.log("3. Login Success! Checking Local Storage..."); // LOG 3
-      
+      console.log("3. Login Success! Checking Local Storage..."); 
+
       const user = JSON.parse(localStorage.getItem('userInfo'));
-      console.log("4. User found in storage:", user); // LOG 4
+      console.log("4. User found in storage:", user); 
 
       if (user.role === 'admin') {
-        console.log("5. Redirecting to Admin..."); // LOG 5
-        navigate('/admin/course-create');
+        console.log("5. Redirecting to Admin..."); 
+        navigate('/dashboard');
       } else {
-        console.log("5. Redirecting to Dashboard..."); // LOG 5
+        console.log("5. Redirecting to Dashboard..."); 
         navigate('/dashboard');
       }
     } else {
