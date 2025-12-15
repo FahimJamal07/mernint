@@ -1,31 +1,39 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../utils/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion'; // <--- NEW IMPORT
 
 const Dashboard = () => {
     const { user, logoutUser } = useAuth();
     const navigate = useNavigate();
     
-    // State
     const [allCourses, setAllCourses] = useState([]);
     const [myCourses, setMyCourses] = useState([]); 
     const [refresh, setRefresh] = useState(false); 
 
-    // 1. Fetch All Courses
+    // Fetch logic remains the same...
     useEffect(() => {
         const fetchCourses = async () => {
-            const res = await fetch('https://cms-backend-podj.onrender.com/api/courses');
+            // NOTE: Use your Render URL here for production, or localhost for dev
+            const baseUrl = window.location.hostname === 'localhost' 
+                ? 'http://localhost:5000' 
+                : 'https://cms-backend-podj.onrender.com';
+
+            const res = await fetch(`${baseUrl}/api/courses`);
             const data = await res.json();
             setAllCourses(data);
         };
         fetchCourses();
     }, [refresh]);
 
-    // 2. Fetch My Profile (Sidebar)
     useEffect(() => {
         const fetchMyProfile = async () => {
             if (!user) return;
-            const res = await fetch('https://cms-backend-podj.onrender.com/api/auth/me', {
+            const baseUrl = window.location.hostname === 'localhost' 
+                ? 'http://localhost:5000' 
+                : 'https://cms-backend-podj.onrender.com';
+
+            const res = await fetch(`${baseUrl}/api/auth/me`, {
                 headers: { 'Authorization': `Bearer ${user.token}` }
             });
             const data = await res.json();
@@ -34,11 +42,11 @@ const Dashboard = () => {
         fetchMyProfile();
     }, [user, refresh]);
 
-    // 3. Handle Enroll (Student)
     const handleEnroll = async (courseId) => {
         if (!confirm("Confirm enrollment?")) return;
+        const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://cms-backend-podj.onrender.com';
         try {
-            const res = await fetch(`https://cms-backend-podj.onrender.com/api/courses/${courseId}/enroll`, {
+            const res = await fetch(`${baseUrl}/api/courses/${courseId}/enroll`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -57,89 +65,103 @@ const Dashboard = () => {
         }
     };
 
-    // 4. Handle Delete (Admin) - RESTORED
     const handleDelete = async (id) => {
         if (confirm('Are you sure you want to delete this course?')) {
-            try {
-                const response = await fetch(`https://cms-backend-podj.onrender.com/api/courses/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${user.token}`
-                    }
-                });
-                if (response.ok) {
-                    setRefresh(!refresh); // Refresh list
-                    alert('Course Deleted');
-                } else {
-                    alert('Failed to delete');
-                }
-            } catch (error) {
-                console.error("Error deleting:", error);
-            }
+            const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://cms-backend-podj.onrender.com';
+            await fetch(`${baseUrl}/api/courses/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${user.token}` }
+            });
+            setRefresh(!refresh);
         }
+    };
+
+    // ANIMATION SETTINGS
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: { 
+            opacity: 1,
+            transition: { staggerChildren: 0.1 } 
+        }
+    };
+
+    const itemVariants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: { y: 0, opacity: 1 }
     };
 
     return (
         <div className="d-flex flex-column vh-100">
             {/* --- NAVBAR --- */}
-            <nav className="navbar navbar-dark bg-dark px-4">
-                <span className="navbar-brand">🚀 DevAcademy</span>
-                <div className="d-flex gap-3 align-items-center">
-                    <span className="text-white">Welcome, {user.name} ({user.role})</span>
-                    <button onClick={logoutUser} className="btn btn-danger btn-sm">Logout</button>
+            <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-4 shadow-sm">
+                <span className="navbar-brand fw-bold text-white">🚀 DevAcademy</span>
+                <div className="ms-auto d-flex gap-3 align-items-center">
+                    <span className="text-white opacity-75">Welcome, {user.name}</span>
+                    <button onClick={logoutUser} className="btn btn-danger btn-sm rounded-pill px-3">Logout</button>
                 </div>
             </nav>
 
-            <div className="d-flex flex-grow-1">
+            <div className="d-flex flex-grow-1 overflow-hidden">
                 {/* --- SIDEBAR --- */}
-                <aside className="bg-light p-3 border-end" style={{ width: '280px', minWidth: '280px' }}>
+                <aside className="bg-white p-4 border-end d-none d-md-block" style={{ width: '280px', minWidth: '280px' }}>
                     
-                    {/* ONLY SHOW "MY LEARNING" IF USER IS A STUDENT */}
                     {user && user.role === 'student' && (
                         <>
-                            <h5 className="mb-4">🎓 My Learning</h5>
-                            
+                            <h6 className="text-uppercase text-muted small fw-bold mb-3">My Learning</h6>
                             {myCourses.length === 0 ? (
-                                <p className="text-muted small">No courses enrolled yet.</p>
+                                <p className="text-muted small">You haven't enrolled in any courses yet.</p>
                             ) : (
                                 <ul className="list-group list-group-flush">
                                     {myCourses.map(course => (
-                                        <li key={course._id} className="list-group-item bg-transparent">
-                                            <strong>{course.title}</strong>
-                                            <br/>
-                                            <span className="badge bg-success">Enrolled</span>
-                                        </li>
+                                        <motion.li 
+                                            whileHover={{ scale: 1.02, x: 5 }}
+                                            key={course._id} 
+                                            className="list-group-item d-flex justify-content-between align-items-center"
+                                        >
+                                            <span className="small fw-semibold">{course.title}</span>
+                                            <span className="badge bg-success rounded-pill" style={{fontSize: '0.6rem'}}>Active</span>
+                                        </motion.li>
                                     ))}
                                 </ul>
                             )}
                         </>
                     )}
                     
-                    {/* KEEP ADMIN CONTROLS VISIBLE ONLY FOR ADMINS */}
                     {user && user.role === 'admin' && (
-                        <div className=" border-top">
-                            <h5 classname="mb-4">Admin Controls</h5><br></br>
-                            <button onClick={() => navigate('/admin/course-create')} className="btn btn-primary w-100 btn-sm">
+                        <div className="mt-4">
+                            <h6 className="text-uppercase text-muted small fw-bold mb-3">Admin Panel</h6>
+                            <motion.button 
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => navigate('/admin/course-create')} 
+                                className="btn btn-primary w-100 shadow-sm"
+                            >
                                 + Create New Course
-                            </button>
+                            </motion.button>
                         </div>
                     )}
                 </aside>
 
                 {/* --- MAIN CONTENT --- */}
-                <main className="flex-grow-1 p-4" style={{ overflowY: 'auto' }}>
-                    <h2 className="mb-4">Available Courses</h2>
+                <main className="flex-grow-1 p-5" style={{ overflowY: 'auto' }}>
+                    <div className="d-flex justify-content-between align-items-center mb-5">
+                        <h2 className="fw-bold text-dark">Available Courses</h2>
+                        <span className="text-muted">Explore our catalog</span>
+                    </div>
 
-                    {/* CHECK IF COURSES EXIST */}
                     {allCourses.length === 0 ? (
-                        // SCENARIO 1: NO COURSES
-                        <div className="alert alert-info text-center p-5">
-                            <h4>No courses available right now.</h4>
-                            <p className="mb-0">Please check back later for new content!</p>
-                        </div>
+                        <motion.div 
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                            className="alert alert-light text-center p-5 shadow-sm rounded-4"
+                        >
+                            <h4 className="text-muted">No courses available right now.</h4>
+                        </motion.div>
                     ) : (
-                        // SCENARIO 2: SHOW COURSE GRID
-                        <div className="row">
+                        <motion.div 
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="visible"
+                            className="row"
+                        >
                             {allCourses.map((course) => {
                                 const enrolledCount = course.studentsEnrolled?.length || 0;
                                 const seatsLeft = (course.seats || 10) - enrolledCount;
@@ -147,55 +169,56 @@ const Dashboard = () => {
                                 const isFull = seatsLeft <= 0;
 
                                 return (
-                                    <div key={course._id} className="col-md-6 col-lg-4 mb-4">
-                                        <div className="card h-100 shadow-sm border-0">
+                                    <motion.div 
+                                        variants={itemVariants}
+                                        key={course._id} 
+                                        className="col-md-6 col-lg-4 mb-4"
+                                    >
+                                        <div className="card h-100 glass-card border-0">
+                                            {/* Image Placeholder */}
+                                            <div style={{ height: '150px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: '16px 16px 0 0' }}></div>
+                                            
                                             <div className="card-body">
-                                                <div className="d-flex justify-content-between">
-                                                    <h5 className="card-title">{course.title}</h5>
-                                                    <span className="badge bg-secondary p-2">${course.price}</span>
+                                                <div className="d-flex justify-content-between align-items-start mb-2">
+                                                    <h5 className="card-title fw-bold">{course.title}</h5>
+                                                    <span className="badge bg-light text-dark border">${course.price}</span>
                                                 </div>
-                                                <p className="text-muted small mt-2">{course.description}</p>
-                                                <div className="alert alert-light border p-2 small">
-                                                    <strong>Seats:</strong> {seatsLeft} / {course.seats || 10} available
+                                                <p className="text-muted small mb-3">{course.description}</p>
+                                                
+                                                <div className="d-flex align-items-center gap-2 mb-3">
+                                                    <div className="progress flex-grow-1" style={{height: '6px'}}>
+                                                        <div 
+                                                            className={`progress-bar ${seatsLeft < 3 ? 'bg-danger' : 'bg-success'}`} 
+                                                            style={{width: `${(enrolledCount / (course.seats || 10)) * 100}%`}}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="small text-muted" style={{fontSize: '0.75rem'}}>
+                                                        {seatsLeft} left
+                                                    </span>
                                                 </div>
                                             </div>
 
-                                            <div className="card-footer bg-white border-top-0">
+                                            <div className="card-footer bg-white border-top-0 p-3 pt-0">
                                                 {user.role === 'admin' ? (
                                                     <div className="d-flex gap-2">
-                                                        <button 
-                                                            onClick={() => handleDelete(course._id)} 
-                                                            className="btn btn-danger flex-grow-1"
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => navigate(`/admin/course-edit/${course._id}`)} 
-                                                            className="btn btn-warning flex-grow-1"
-                                                        >
-                                                            Edit
-                                                        </button>
+                                                        <button onClick={() => handleDelete(course._id)} className="btn btn-outline-danger flex-grow-1 btn-sm">Delete</button>
+                                                        <button onClick={() => navigate(`/admin/course-edit/${course._id}`)} className="btn btn-outline-warning flex-grow-1 btn-sm">Edit</button>
                                                     </div>
                                                 ) : (
                                                     isEnrolled ? (
-                                                        <button disabled className="btn btn-success w-100">Already Enrolled</button>
+                                                        <button disabled className="btn btn-light text-success w-100 fw-bold">✓ Enrolled</button>
                                                     ) : isFull ? (
-                                                        <button disabled className="btn btn-secondary w-100">Class Full</button>
+                                                        <button disabled className="btn btn-secondary w-100">Sold Out</button>
                                                     ) : (
-                                                        <button 
-                                                            onClick={() => handleEnroll(course._id)} 
-                                                            className="btn btn-primary w-100"
-                                                        >
-                                                            Enroll Now
-                                                        </button>
+                                                        <button onClick={() => handleEnroll(course._id)} className="btn btn-primary w-100 shadow-sm">Enroll Now</button>
                                                     )
                                                 )}
                                             </div>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 );
                             })}
-                        </div>
+                        </motion.div>
                     )}
                 </main>
             </div>
