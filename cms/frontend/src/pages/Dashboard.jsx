@@ -152,7 +152,7 @@ const Dashboard = () => {
                                             <div className="card-body">
                                                 <div className="d-flex justify-content-between">
                                                     <h5 className="card-title">{course.title}</h5>
-                                                    <span className="badge bg-secondary">${course.price}</span>
+                                                    <span className="badge bg-secondary p-2">${course.price}</span>
                                                 </div>
                                                 <p className="text-muted small mt-2">{course.description}</p>
                                                 <div className="alert alert-light border p-2 small">
