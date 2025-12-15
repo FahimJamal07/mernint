@@ -53,7 +53,7 @@ const AuthPage = () => {
     <div className="container d-flex justify-content-center align-items-center vh-100">
       <div className="card shadow p-4" style={{ width: '400px' }}>
         <h3 className="text-center mb-4">
-          {isLoginView ? 'Student Login' : 'New User Registration'}
+          {isLoginView ? 'Login' : 'New User Registration'}
         </h3>
 
         <form onSubmit={handleAuthSubmit}>
