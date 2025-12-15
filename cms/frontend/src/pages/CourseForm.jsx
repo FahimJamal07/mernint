@@ -18,7 +18,7 @@ const CourseForm = () => {
     useEffect(() => {
         if (isEditMode) {
             const fetchCourse = async () => {
-                const response = await fetch(`http://localhost:5000/api/courses`);
+                const response = await fetch(`https://cms-backend-podj.onrender.com/api/courses`);
                 const data = await response.json();
                 // Find the specific course from the list (or fetch by ID directly)
                 const course = data.find(c => c._id === id);
@@ -38,8 +38,8 @@ const CourseForm = () => {
 
         // 1. Decide URL and Method
         const url = isEditMode 
-            ? `http://localhost:5000/api/courses/${id}` 
-            : 'http://localhost:5000/api/courses';
+            ? `https://cms-backend-podj.onrender.com/api/courses/${id}` 
+            : 'https://cms-backend-podj.onrender.com/api/courses';
             
         const method = isEditMode ? 'PUT' : 'POST';
 

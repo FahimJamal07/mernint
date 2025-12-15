@@ -14,7 +14,7 @@ const Dashboard = () => {
     // 1. Fetch All Courses
     useEffect(() => {
         const fetchCourses = async () => {
-            const res = await fetch('http://localhost:5000/api/courses');
+            const res = await fetch('https://cms-backend-podj.onrender.com/api/courses');
             const data = await res.json();
             setAllCourses(data);
         };
@@ -25,7 +25,7 @@ const Dashboard = () => {
     useEffect(() => {
         const fetchMyProfile = async () => {
             if (!user) return;
-            const res = await fetch('http://localhost:5000/api/auth/me', {
+            const res = await fetch('https://cms-backend-podj.onrender.com/api/auth/me', {
                 headers: { 'Authorization': `Bearer ${user.token}` }
             });
             const data = await res.json();
@@ -38,7 +38,7 @@ const Dashboard = () => {
     const handleEnroll = async (courseId) => {
         if (!confirm("Confirm enrollment?")) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/courses/${courseId}/enroll`, {
+            const res = await fetch(`https://cms-backend-podj.onrender.com/api/courses/${courseId}/enroll`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -61,7 +61,7 @@ const Dashboard = () => {
     const handleDelete = async (id) => {
         if (confirm('Are you sure you want to delete this course?')) {
             try {
-                const response = await fetch(`http://localhost:5000/api/courses/${id}`, {
+                const response = await fetch(`https://cms-backend-podj.onrender.com/api/courses/${id}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${user.token}`
