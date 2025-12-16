@@ -152,12 +152,7 @@ const Dashboard = () => {
                             <h4 className="text-muted">No courses available right now.</h4>
                         </motion.div>
                     ) : (
-                        <motion.div 
-                            variants={containerVariants}
-                            initial="hidden"
-                            animate="visible"
-                            className="row"
-                        >
+                        <div className="row">
                             {allCourses.map((course) => {
                                 const enrolledCount = course.studentsEnrolled?.length || 0;
                                 const seatsLeft = (course.seats || 10) - enrolledCount;
@@ -165,11 +160,7 @@ const Dashboard = () => {
                                 const isFull = seatsLeft <= 0;
 
                                 return (
-                                    <motion.div 
-                                        variants={itemVariants}
-                                        key={course._id} 
-                                        className="col-md-6 col-lg-4 mb-4"
-                                    >
+                                    <div key={course._id} className="col-md-6 col-lg-4 mb-4">
                                         <div className="card h-100 glass-card border-0">
                                             {/* Colorful Card Header */}
                                             <div style={{ height: '100px', background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.4) 100%)', borderRadius: '20px 20px 0 0', borderBottom: '1px solid rgba(255,255,255,0.5)' }}></div>
@@ -211,10 +202,10 @@ const Dashboard = () => {
                                                 )}
                                             </div>
                                         </div>
-                                    </motion.div>
+                                    </div>
                                 );
                             })}
-                        </motion.div>
+                        </div>
                     )}
                 </main>
             </div>
