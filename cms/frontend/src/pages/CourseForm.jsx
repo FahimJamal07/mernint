@@ -57,7 +57,7 @@ const CourseForm = () => {
 
             if (response.ok) {
                 alert(isEditMode ? 'Course Updated!' : 'Course Created!');
-                navigate('/dashboard'); // Go back to dashboard
+                window.location.href = '/dashboard';
             } else {
                 setMessage(`❌ Error: ${data.message}`);
             }
