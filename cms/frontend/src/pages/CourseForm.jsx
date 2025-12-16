@@ -3,29 +3,40 @@ import { useAuth } from '../utils/AuthContext';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const CourseForm = () => {
-    const { user, logoutUser } = useAuth();
+    const { user } = useAuth();
     const navigate = useNavigate();
-    const { id } = useParams(); // Get ID from URL if editing
+    const { id } = useParams();
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState('');
     const [message, setMessage] = useState('');
 
-    const isEditMode = !!id; // If ID exists, we are editing
+    const isEditMode = !!id;
+
+    // Helper to get the right URL (Local vs Live)
+    const getBaseUrl = () => {
+        return window.location.hostname === 'localhost'
+            ? 'http://localhost:5000'
+            : 'https://my-cms-backend.onrender.com';
+    };
 
     // Load data if Editing
     useEffect(() => {
         if (isEditMode) {
             const fetchCourse = async () => {
-                const response = await fetch(`https://cms-backend-podj.onrender.com/api/courses`);
-                const data = await response.json();
-                // Find the specific course from the list (or fetch by ID directly)
-                const course = data.find(c => c._id === id);
-                if (course) {
-                    setTitle(course.title);
-                    setDescription(course.description);
-                    setPrice(course.price);
+                try {
+                    const baseUrl = getBaseUrl();
+                    const response = await fetch(`${baseUrl}/api/courses`);
+                    const data = await response.json();
+                    const course = data.find(c => c._id === id);
+                    if (course) {
+                        setTitle(course.title);
+                        setDescription(course.description);
+                        setPrice(course.price);
+                    }
+                } catch (error) {
+                    console.error("Error fetching course:", error);
                 }
             };
             fetchCourse();
@@ -36,10 +47,10 @@ const CourseForm = () => {
         e.preventDefault();
         setMessage('');
 
-        // 1. Decide URL and Method
+        const baseUrl = getBaseUrl();
         const url = isEditMode 
-            ? `https://cms-backend-podj.onrender.com/api/courses/${id}` 
-            : 'https://cms-backend-podj.onrender.com/api/courses';
+            ? `${baseUrl}/api/courses/${id}` 
+            : `${baseUrl}/api/courses`;
             
         const method = isEditMode ? 'PUT' : 'POST';
 
@@ -57,7 +68,8 @@ const CourseForm = () => {
 
             if (response.ok) {
                 alert(isEditMode ? 'Course Updated!' : 'Course Created!');
-                window.location.href = '/dashboard';
+                // FORCE RELOAD to see changes instantly
+                window.location.href = '/dashboard'; 
             } else {
                 setMessage(`❌ Error: ${data.message}`);
             }
@@ -69,40 +81,47 @@ const CourseForm = () => {
     return (
         <div className="container mt-5">
             <div className="d-flex justify-content-between align-items-center mb-4">
-                <h1>{isEditMode ? 'Edit Course' : 'Create Course'}</h1>
-                <button onClick={() => navigate('/dashboard')} className="btn btn-secondary">Back to Dashboard</button>
+                <h1 className="fw-bold text-white" style={{textShadow: '0 2px 4px rgba(0,0,0,0.2)'}}>
+                    {isEditMode ? 'Edit Course' : 'Create Course'}
+                </h1>
+                <button onClick={() => navigate('/dashboard')} className="btn btn-light rounded-pill px-4 shadow-sm">
+                    Back to Dashboard
+                </button>
             </div>
 
-            <div className="card p-4 shadow-sm" style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <div className="card glass-card p-5 border-0" style={{ maxWidth: '600px', margin: '0 auto' }}>
                 {message && <div className="alert alert-danger">{message}</div>}
 
                 <form onSubmit={handleSubmit}>
-                    <div className="mb-3">
-                        <label className="form-label">Course Title</label>
+                    <div className="mb-4">
+                        <label className="form-label fw-bold">Course Title</label>
                         <input 
-                            type="text" className="form-control" 
+                            type="text" className="form-control rounded-3 p-3 border-0 bg-light" 
+                            placeholder="e.g. Advanced React Patterns"
                             value={title} onChange={(e) => setTitle(e.target.value)} required 
                         />
                     </div>
 
-                    <div className="mb-3">
-                        <label className="form-label">Description</label>
+                    <div className="mb-4">
+                        <label className="form-label fw-bold">Description</label>
                         <textarea 
-                            className="form-control" rows="3"
+                            className="form-control rounded-3 p-3 border-0 bg-light" rows="4"
+                            placeholder="What will students learn?"
                             value={description} onChange={(e) => setDescription(e.target.value)} required 
                         ></textarea>
                     </div>
 
-                    <div className="mb-3">
-                        <label className="form-label">Price ($)</label>
+                    <div className="mb-4">
+                        <label className="form-label fw-bold">Price ($)</label>
                         <input 
-                            type="number" className="form-control" 
+                            type="number" className="form-control rounded-3 p-3 border-0 bg-light" 
+                            placeholder="49.99"
                             value={price} onChange={(e) => setPrice(e.target.value)} required 
                         />
                     </div>
 
-                    <button type="submit" className="btn btn-success w-100">
-                        {isEditMode ? 'Update Course' : 'Create Course'}
+                    <button type="submit" className="btn btn-primary w-100 py-3 mt-2 shadow-lg fw-bold">
+                        {isEditMode ? 'Update Course' : '🚀 Create Course'}
                     </button>
                 </form>
             </div>
