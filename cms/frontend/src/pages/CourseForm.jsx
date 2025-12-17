@@ -18,7 +18,7 @@ const CourseForm = () => {
     const getBaseUrl = () => {
         return window.location.hostname === 'localhost'
             ? 'http://localhost:5000'
-            : 'https://cms-backend-podj.onrender.com';
+            : 'http://13.60.201.162:5000';
     };
 
     // Load data if Editing
