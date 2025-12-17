@@ -15,7 +15,7 @@ const Dashboard = () => {
     const getBaseUrl = () => {
         return window.location.hostname === 'localhost' 
             ? 'http://localhost:5000' 
-            : 'http://13.60.201.162:5000';
+            : 'https://cms-backend-podj.onrender.com';
     };
 
     // 1. Fetch All Courses
