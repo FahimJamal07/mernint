@@ -14,12 +14,9 @@ const CourseForm = () => {
 
     const isEditMode = !!id;
 
-    // Helper to get the right URL (Local vs Live)
     const getBaseUrl = () => {
-        return window.location.hostname === 'localhost'
-            ? 'http://localhost:5000'
-            : 'https://cms-backend-podj.onrender.com';
-    };
+    return 'http://13.60.87.89:5000'; 
+};
 
     // Load data if Editing
     useEffect(() => {
