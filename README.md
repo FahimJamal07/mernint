@@ -167,10 +167,10 @@ The backend exposes a RESTful API. Below are the primary endpoints available in 
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/enroll/:id` | Enroll a student in a specific course | **Yes (Student)** |
 
-# Note
+### Note
 to login as admin, use
-email id : admin@edu.com
-pass: 123456789
+* email id : admin@edu.com
+* pass: 123456789
 
 ## 📄 License
 
